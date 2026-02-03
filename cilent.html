@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>MyHub Client</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <h1 id="siteTitle"></h1>
+  <div id="content"></div>
+</main>
+
+<script>
+function getQuery(name) {
+  const params = new URLSearchParams(window.location.search);
+  return params.get(name);
+}
+
+let repos = JSON.parse(localStorage.getItem("repos"));
+let repoIndex = getQuery("repo");
+let repo = repos[repoIndex];
+
+document.getElementById("siteTitle").innerText = repo.name;
+
+// Render the first file that is index.html or README.md
+let file = repo.files.find(f => f.path === "index.html") ||
+           repo.files.find(f => f.path === "README.md") ||
+           repo.files[0];
+
+if (file.path.endsWith(".html")) {
+  document.getElementById("content").innerHTML = file.content;
+} else if (file.path.endsWith(".md")) {
+  document.getElementById("content").innerHTML = marked.parse(file.content);
+} else {
+  document.getElementById("content").innerText = file.content;
+}
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</body>
+</html>
