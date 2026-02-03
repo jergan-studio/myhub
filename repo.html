@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Repository</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main>
+    <h2 id="repoTitle"></h2>
+    <textarea id="fileContent" rows="10" cols="60"
+      placeholder="README.md"></textarea>
+    <br><br>
+    <button onclick="save()">Commit</button>
+  </main>
+
+  <script>
+    let repos = JSON.parse(localStorage.getItem("repos"));
+    let index = localStorage.getItem("currentRepo");
+
+    document.getElementById("repoTitle").innerText = repos[index].name;
+
+    function save() {
+      repos[index].readme = document.getElementById("fileContent").value;
+      localStorage.setItem("repos", JSON.stringify(repos));
+      alert("Committed ✔");
+    }
+  </script>
+</body>
+</html>
