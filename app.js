@@ -1,10 +1,16 @@
 let repos = JSON.parse(localStorage.getItem("repos")) || [];
 
 function createRepo() {
-  const name = document.getElementById("repoName").value;
+  const name = document.getElementById("repoName").value.trim();
   if (!name) return;
 
-  repos.push({ name, files: [] });
+  repos.push({
+    name,
+    files: [
+      { path: "README.md", content: "# " + name }
+    ]
+  });
+
   localStorage.setItem("repos", JSON.stringify(repos));
   document.getElementById("repoName").value = "";
   renderRepos();
@@ -19,7 +25,7 @@ function renderRepos() {
     li.textContent = repo.name;
     li.onclick = () => {
       localStorage.setItem("currentRepo", index);
-      window.location = "repo.html";
+      location.href = "repo.html";
     };
     list.appendChild(li);
   });
