@@ -1,42 +1,69 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>MyHub Client</title>
   <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0d1117;
+      color: #c9d1d9;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      border-bottom: 1px solid #30363d;
+      padding-bottom: 10px;
+    }
+    #content {
+      margin-top: 20px;
+    }
+  </style>
 </head>
 <body>
-<main>
-  <h1 id="siteTitle"></h1>
-  <div id="content"></div>
-</main>
+
+<h1 id="siteTitle"></h1>
+<div id="content"></div>
 
 <script>
-function getQuery(name) {
+/************* GET QUERY PARAM *************/
+function getQueryParam(name) {
   const params = new URLSearchParams(window.location.search);
   return params.get(name);
 }
 
+/************* LOAD REPO *************/
 let repos = JSON.parse(localStorage.getItem("repos"));
-let repoIndex = getQuery("repo");
+let repoIndex = getQueryParam("repo");
 let repo = repos[repoIndex];
 
-document.getElementById("siteTitle").innerText = repo.name;
-
-// Render the first file that is index.html or README.md
-let file = repo.files.find(f => f.path === "index.html") ||
-           repo.files.find(f => f.path === "README.md") ||
-           repo.files[0];
-
-if (file.path.endsWith(".html")) {
-  document.getElementById("content").innerHTML = file.content;
-} else if (file.path.endsWith(".md")) {
-  document.getElementById("content").innerHTML = marked.parse(file.content);
+if (!repo) {
+  document.getElementById("siteTitle").innerText = "Repository Not Found";
+  document.getElementById("content").innerText = "This repo does not exist.";
 } else {
-  document.getElementById("content").innerText = file.content;
+  document.getElementById("siteTitle").innerText = repo.name;
+
+  // Try to render index.html first
+  let file = repo.files.find(f => f.path === "index.html") ||
+             repo.files.find(f => f.path === "README.md") ||
+             repo.files[0];
+
+  const contentDiv = document.getElementById("content");
+
+  if (file.path.endsWith(".html")) {
+    // Render HTML directly
+    contentDiv.innerHTML = file.content;
+  } else if (file.path.endsWith(".md")) {
+    // Render Markdown
+    contentDiv.innerHTML = marked.parse(file.content);
+  } else {
+    // Fallback for other files
+    contentDiv.innerText = file.content;
+  }
 }
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </body>
 </html>
