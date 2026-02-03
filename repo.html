@@ -3,27 +3,91 @@
 <head>
   <title>Repository</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    .container {
+      display: flex;
+      gap: 20px;
+    }
+    .files {
+      width: 200px;
+      border-right: 1px solid #30363d;
+    }
+    .files div {
+      padding: 6px;
+      cursor: pointer;
+    }
+    .files div:hover {
+      background: #21262d;
+    }
+    textarea {
+      width: 100%;
+      height: 300px;
+      background: #0d1117;
+      color: white;
+      border: 1px solid #30363d;
+    }
+  </style>
 </head>
 <body>
-  <main>
-    <h2 id="repoTitle"></h2>
-    <textarea id="fileContent" rows="10" cols="60"
-      placeholder="README.md"></textarea>
-    <br><br>
-    <button onclick="save()">Commit</button>
-  </main>
 
-  <script>
-    let repos = JSON.parse(localStorage.getItem("repos"));
-    let index = localStorage.getItem("currentRepo");
+<main>
+  <h2 id="repoTitle"></h2>
 
-    document.getElementById("repoTitle").innerText = repos[index].name;
+  <button onclick="newFile()">+ New File</button>
 
-    function save() {
-      repos[index].readme = document.getElementById("fileContent").value;
-      localStorage.setItem("repos", JSON.stringify(repos));
-      alert("Committed ✔");
-    }
-  </script>
+  <div class="container">
+    <div class="files" id="fileList"></div>
+    <div style="flex:1">
+      <h3 id="fileName"></h3>
+      <textarea id="editor"></textarea><br>
+      <button onclick="saveFile()">Commit</button>
+    </div>
+  </div>
+</main>
+
+<script>
+let repos = JSON.parse(localStorage.getItem("repos"));
+let repoIndex = localStorage.getItem("currentRepo");
+let repo = repos[repoIndex];
+let currentFile = null;
+
+document.getElementById("repoTitle").innerText = repo.name;
+
+repo.files ||= [];
+
+function renderFiles() {
+  const list = document.getElementById("fileList");
+  list.innerHTML = "";
+  repo.files.forEach((f, i) => {
+    const div = document.createElement("div");
+    div.innerText = f.path;
+    div.onclick = () => openFile(i);
+    list.appendChild(div);
+  });
+}
+
+function openFile(i) {
+  currentFile = repo.files[i];
+  document.getElementById("fileName").innerText = currentFile.path;
+  document.getElementById("editor").value = currentFile.content;
+}
+
+function saveFile() {
+  if (!currentFile) return;
+  currentFile.content = document.getElementById("editor").value;
+  localStorage.setItem("repos", JSON.stringify(repos));
+  alert("Committed ✔");
+}
+
+function newFile() {
+  const path = prompt("File path (example: src/main.js)");
+  if (!path) return;
+  repo.files.push({ path, content: "" });
+  renderFiles();
+}
+
+renderFiles();
+</script>
+
 </body>
 </html>
