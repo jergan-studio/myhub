@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Repository</title>
@@ -11,10 +11,13 @@
 <main>
   <h2 id="repoTitle"></h2>
 
+  <!-- Controls -->
   <button onclick="newFile()">+ New File</button>
   <button onclick="togglePreview()">Toggle Preview</button>
   <button onclick="commit()">Commit</button>
+  <button onclick="openClient()">Open in Client</button>
 
+  <!-- File tree + editor -->
   <div class="container">
     <div class="files" id="fileList"></div>
 
@@ -27,14 +30,20 @@
 </main>
 
 <script>
+/************* GLOBAL VARIABLES *************/
 let repos = JSON.parse(localStorage.getItem("repos"));
 let repoIndex = localStorage.getItem("currentRepo");
 let repo = repos[repoIndex];
 let currentFile = null;
 let preview = false;
 
+// Show repo title
 document.getElementById("repoTitle").innerText = repo.name;
 
+// Ensure repo has files
+repo.files ||= [];
+
+/************* FILE TREE *************/
 function renderFiles() {
   const list = document.getElementById("fileList");
   list.innerHTML = "";
@@ -53,21 +62,7 @@ function openFile(i) {
   updatePreview();
 }
 
-function newFile() {
-  const path = prompt("File path (example: src/main.js)");
-  if (!path) return;
-  repo.files.push({ path, content: "" });
-  save();
-  renderFiles();
-}
-
-function commit() {
-  if (!currentFile) return;
-  currentFile.content = document.getElementById("editor").value;
-  save();
-  alert("Committed ✔");
-}
-
+/************* EDITOR & PREVIEW *************/
 function togglePreview() {
   preview = !preview;
   document.getElementById("editor").style.display = preview ? "none" : "block";
@@ -77,20 +72,50 @@ function togglePreview() {
 
 function updatePreview() {
   if (!currentFile) return;
+
   if (currentFile.path.endsWith(".md")) {
     document.getElementById("preview").innerHTML =
       marked.parse(document.getElementById("editor").value);
+  } else if (currentFile.path.endsWith(".html")) {
+    document.getElementById("preview").innerHTML =
+      document.getElementById("editor").value;
   } else {
     document.getElementById("preview").innerText =
-      "Preview only for .md files";
+      "Preview only for .md or .html files";
   }
 }
 
+/************* FILE MANAGEMENT *************/
+function newFile() {
+  const path = prompt("File path (example: src/main.js)");
+  if (!path) return;
+
+  repo.files.push({ path, content: "" });
+  save();
+  renderFiles();
+  openFile(repo.files.length - 1);
+}
+
+function commit() {
+  if (!currentFile) return;
+  currentFile.content = document.getElementById("editor").value;
+  save();
+  alert("Committed ✔");
+}
+
+/************* OPEN IN CLIENT *************/
+function openClient() {
+  if (!repo) return;
+  const url = `client.html?repo=${repoIndex}`;
+  window.open(url, "_blank");
+}
+
+/************* SAVE FUNCTION *************/
 function save() {
   localStorage.setItem("repos", JSON.stringify(repos));
 }
 
-// auto-save
+// Auto-save every 5 seconds
 setInterval(() => {
   if (currentFile) {
     currentFile.content = document.getElementById("editor").value;
@@ -98,9 +123,10 @@ setInterval(() => {
   }
 }, 5000);
 
+/************* INITIALIZATION *************/
 renderFiles();
-openFile(0);
-</script>
+if (repo.files.length > 0) openFile(0);
 
+</script>
 </body>
 </html>
