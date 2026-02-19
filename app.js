@@ -1,19 +1,19 @@
 /************* GLOBAL VARIABLES *************/
 let repos = JSON.parse(localStorage.getItem("repos")) || [];
 
-/************* REPO LIST FUNCTIONS *************/
+/************* REPO CREATION *************/
 function createRepo() {
   const name = document.getElementById("repoName").value.trim();
   if (!name) return alert("Enter a repo name");
 
-  // Generate a random deploy token
+  // Generate a random deploy token (optional, for MyHub simulation)
   const token = generateToken(16);
 
   repos.push({
     name,
     files: [{ path: "README.md", content: "# " + name }],
-    deployToken: token,      // unique token per repo
-    deployedURL: null        // will store the deploy URL
+    deployToken: token,
+    deployedURL: null
   });
 
   localStorage.setItem("repos", JSON.stringify(repos));
@@ -21,7 +21,7 @@ function createRepo() {
   renderRepos();
 }
 
-/************* RENDER REPOS *************/
+/************* RENDER REPO LIST *************/
 function renderRepos() {
   const list = document.getElementById("repoList");
   list.innerHTML = "";
@@ -39,7 +39,7 @@ function renderRepos() {
     };
     li.appendChild(nameSpan);
 
-    // Show deploy token
+    // Show deploy token (optional)
     const tokenSpan = document.createElement("span");
     tokenSpan.textContent = " | Token: " + repo.deployToken;
     tokenSpan.style.marginLeft = "10px";
@@ -49,9 +49,9 @@ function renderRepos() {
 
     // Deploy button
     const deployBtn = document.createElement("button");
-    deployBtn.textContent = "Deploy";
+    deployBtn.textContent = "Deploy to Vercel";
     deployBtn.style.marginLeft = "10px";
-    deployBtn.onclick = () => deployRepo(index);
+    deployBtn.onclick = () => deployToVercel(index);
     li.appendChild(deployBtn);
 
     // Show deployed URL if exists
@@ -68,20 +68,49 @@ function renderRepos() {
   });
 }
 
-/************* DEPLOY SIMULATION *************/
-function deployRepo(index) {
+/************* DEPLOY TO VERCEL *************/
+async function deployToVercel(index) {
   const repo = repos[index];
-  const token = repo.deployToken;
 
-  // Simulate deploy by generating a fake URL with token
-  const deployURL = `https://${repo.name.toLowerCase()}.myhub.com/?token=${token}`;
-  repo.deployedURL = deployURL;
-  localStorage.setItem("repos", JSON.stringify(repos));
-  alert(`Repo deployed! URL: ${deployURL}`);
-  renderRepos();
+  // Ask user for Vercel token
+  const userToken = prompt("Enter your Vercel Personal Token:");
+  if (!userToken) return alert("Deployment cancelled: token required");
+
+  // Prepare files for deployment
+  const files = repo.files.map(f => ({
+    file: f.path,
+    data: f.content
+  }));
+
+  try {
+    const response = await fetch("https://api.vercel.com/v13/deployments", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${userToken}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        name: repo.name,
+        files
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.url) {
+      repo.deployedURL = "https://" + data.url;
+      localStorage.setItem("repos", JSON.stringify(repos));
+      alert("Deployed! URL: " + repo.deployedURL);
+      renderRepos();
+    } else {
+      alert("Deployment failed: " + JSON.stringify(data));
+    }
+  } catch (err) {
+    alert("Deployment error: " + err.message);
+  }
 }
 
-/************* HELPER: RANDOM TOKEN *************/
+/************* RANDOM TOKEN GENERATOR *************/
 function generateToken(length = 16) {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let token = '';
