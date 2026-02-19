@@ -4,10 +4,9 @@ let repos = JSON.parse(localStorage.getItem("repos")) || [];
 /************* REPO CREATION *************/
 function createRepo() {
   const name = document.getElementById("repoName").value.trim();
-  if (!name) return alert("Enter a repo name");
+  if (!name) return alert("Enter a repository name");
 
-  // Generate a random deploy token (optional, for MyHub simulation)
-  const token = generateToken(16);
+  const token = generateToken(16); // optional MyHub token
 
   repos.push({
     name,
@@ -39,7 +38,7 @@ function renderRepos() {
     };
     li.appendChild(nameSpan);
 
-    // Show deploy token (optional)
+    // Optional token display
     const tokenSpan = document.createElement("span");
     tokenSpan.textContent = " | Token: " + repo.deployToken;
     tokenSpan.style.marginLeft = "10px";
@@ -72,18 +71,18 @@ function renderRepos() {
 async function deployToVercel(index) {
   const repo = repos[index];
 
-  // Ask user for Vercel token
+  // Prompt user for personal token
   const userToken = prompt("Enter your Vercel Personal Token:");
   if (!userToken) return alert("Deployment cancelled: token required");
 
-  // Prepare files for deployment
+  // Prepare files for Vercel API
   const files = repo.files.map(f => ({
     file: f.path,
     data: f.content
   }));
 
   try {
-    const response = await fetch("https://api.vercel.com/v13/deployments", {
+    const res = await fetch("https://api.vercel.com/v13/deployments", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${userToken}`,
@@ -95,22 +94,29 @@ async function deployToVercel(index) {
       })
     });
 
-    const data = await response.json();
+    const data = await res.json();
+
+    // Proper error handling
+    if (data.error) {
+      alert("Deployment failed:\n" + data.error.message);
+      return;
+    }
 
     if (data.url) {
       repo.deployedURL = "https://" + data.url;
       localStorage.setItem("repos", JSON.stringify(repos));
-      alert("Deployed! URL: " + repo.deployedURL);
+      alert("Deployed successfully! URL: " + repo.deployedURL);
       renderRepos();
     } else {
-      alert("Deployment failed: " + JSON.stringify(data));
+      alert("Unexpected response from Vercel:\n" + JSON.stringify(data));
     }
+
   } catch (err) {
     alert("Deployment error: " + err.message);
   }
 }
 
-/************* RANDOM TOKEN GENERATOR *************/
+/************* HELPER: RANDOM TOKEN *************/
 function generateToken(length = 16) {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let token = '';
