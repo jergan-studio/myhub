@@ -1,34 +1,24 @@
-let repos = JSON.parse(localStorage.getItem("repos")) || [];
+// app.js (simplified)
+import express from "express";
+import dotenv from "dotenv";
 
-function createRepo() {
-  const name = document.getElementById("repoName").value.trim();
-  if (!name) return;
+dotenv.config();
+const app = express();
+app.use(express.json());
 
-  repos.push({
-    name,
-    files: [
-      { path: "README.md", content: "# " + name }
-    ]
-  });
+let currentDeployment = "";
 
-  localStorage.setItem("repos", JSON.stringify(repos));
-  document.getElementById("repoName").value = "";
-  renderRepos();
-}
+app.patch("/update-deployment", (req, res) => {
+  const { url, token } = req.body;
+  if (token !== process.env.MYHUB_TOKEN) {
+    return res.status(401).json({ error: "Invalid token" });
+  }
+  currentDeployment = url;
+  res.json({ success: true, deployment: currentDeployment });
+});
 
-function renderRepos() {
-  const list = document.getElementById("repoList");
-  list.innerHTML = "";
+app.get("/deployment", (req, res) => {
+  res.json({ deployment: currentDeployment });
+});
 
-  repos.forEach((repo, index) => {
-    const li = document.createElement("li");
-    li.textContent = repo.name;
-    li.onclick = () => {
-      localStorage.setItem("currentRepo", index);
-      location.href = "repo.html";
-    };
-    list.appendChild(li);
-  });
-}
-
-renderRepos();
+app.listen(3000, () => console.log("MyHUB API running on port 3000"));
